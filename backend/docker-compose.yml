@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: agri-one-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agri_one
+      POSTGRES_USER: agri_one
+      POSTGRES_PASSWORD: agri_one_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - agri_one_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agri_one -d agri_one"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  agri_one_postgres:

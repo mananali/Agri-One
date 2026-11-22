@@ -1,12 +1,12 @@
 {
-  "name": "my-app",
+  "name": "agri-one",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint app components lib"
   },
   "dependencies": {
     "next": "16.4.6",

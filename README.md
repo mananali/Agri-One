@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agri-One
 
-## Getting Started
+Agri-One is planned as a B2B agriculture input marketplace for retailers and suppliers, initially focused on Cooch Behar and Alipurduar, West Bengal. It combines third-party marketplace listings with Agri-One-owned wholesale stock. The current repository contains the public website prototype and planning documents.
 
-First, run the development server:
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). If port 3000 is already in use, Next.js will choose another available port and print its URL.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Current frontend prototype
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Public marketplace pages: home, about, categories, brands, services, retailer and supplier information, contact, FAQ, login, registration, privacy and terms.
+- Role workspaces: `/admin`, `/retailer`, `/supplier`, `/delivery`, `/warehouse`, `/accounts` and `/farmer`.
+- Responsive layouts with shared navigation, catalogue cards, tables, local search, sorting, filters, pagination controls, charts, and demo feedback.
+- Registration and sign-in submit to the NestJS API. Retailer catalogue, cart quantities and workspace dashboards remain illustrative frontend data.
+- Complete route map and visual tokens are documented in [Frontend Structure](docs/FRONTEND_STRUCTURE.md).
 
-## Learn More
+Most products, prices, counts, suppliers, statuses, and workspace interactions are illustrative frontend data. The API includes JWT authentication, PostgreSQL persistence, approved catalogue reads, supplier submissions and stock updates, admin reviews, and transactional retailer checkout. The frontend currently connects only its registration and sign-in screens to that API. Payment gateways, live KYC uploads, and logistics integrations are not implemented.
 
-To learn more about Next.js, take a look at the following resources:
+## Run the API
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Start PostgreSQL first (Docker instructions and credentials are in [backend/README.md](backend/README.md)), then in a second terminal:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cd backend
+copy .env.example .env
+npm install
+npm run db:migrate -- --name init
+npm run db:seed
+npm run start:dev
+```
 
-## Deploy on Vercel
+The web sign-in and registration screens use `http://localhost:3001/api/v1` by default. Set `NEXT_PUBLIC_API_URL` if the API runs elsewhere.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project documents
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Software Requirements Specification](docs/SRS.md)
+- [Project Blueprint](docs/PROJECT_BLUEPRINT.md)
+
+The requirements and architecture are drafts derived from the project brief. Business policies, compliance responsibilities, integrations, service targets and commercial terms require confirmation before production implementation.
