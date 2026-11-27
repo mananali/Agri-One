@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { BrandMark } from "@/components/BrandMark";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -37,7 +37,11 @@ type BackupRecord = { id: string; fileName: string; status: string; sizeBytes: n
 type ReturnRecord = { id: string; reason: string; status: string; reviewReason: string | null; requestedAt: string; customerOrder: { id: string; orderNumber: string; retailer: { id: string; name: string; phone: string | null }; total: number | string; status: string } };
 type BusinessDashboard = { pendingOrders: number; lowStock: number; expiringProducts: number; expiringLots: { id: string; quantity: number; batchNumber: string | null; expiresAt: string | null; offer: { product: { name: string }; seller: { name: string } } }[]; deliveryStatus: { status: string; _count: { _all: number } }[]; monthlySales: { month: string; total: number; orders: number }[]; retailerDue: number; supplierDue: number; cashAndBank: number; expenses: number; collections: number };
 
-const emptyForm = (categoryId = ""): ProductForm => ({ name: "", categoryId, brandId: "", description: "", imageUrl: "", packSize: "", unit: "piece", price: "", mrp: "", taxRate: "0", sellerSku: `AO-${Date.now().toString().slice(-7)}`, servicePinCodes: "", minimumOrderQuantity: "1", stockOnHand: "0", status: "APPROVED" });
+const emptyForm = (categoryId = ""): ProductForm => ({ name: "", categoryId, brandId: "", description: "", imageUrl: "", packSize: "", unit: "piece", price: "", mrp: "", taxRate: "0", sellerSku: "", servicePinCodes: "", minimumOrderQuantity: "1", stockOnHand: "0", status: "APPROVED" });
+function newSellerSku() {
+  const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `AO-${id.replaceAll("-", "").slice(-7).toUpperCase()}`;
+}
 const nav: { id: Tab; label: string; icon: string }[] = [
   { id: "overview", label: "Dashboard / Overview", icon: "▦" },
   { id: "orders", label: "Orders", icon: "▣" },
@@ -199,11 +203,11 @@ export function AdminControlPanel() {
   const visibleLegacyNav = legacyNav.filter((item) => item.parent === activeGroup && canAccess(item.permission));
   const tabLabel = nav.find((item) => item.id === tab)?.label ?? legacyNav.find((item) => item.id === tab)?.label ?? "Dashboard / Overview";
 
-  const openNewProduct = () => { setEditing(null); setForm(emptyForm(categories[0]?.id)); setImageFile(null); setImagePreview(""); setShowProductForm(true); };
+  const openNewProduct = () => { setEditing(null); setForm({ ...emptyForm(categories[0]?.id), sellerSku: newSellerSku() }); setImageFile(null); setImagePreview(""); setShowProductForm(true); };
   const openEditProduct = (item: AdminProduct) => {
     const offer = item.offers.find((entry) => entry.source === "AGRI_ONE_STOCK") ?? item.offers[0];
     setEditing(item); setImageFile(null); setImagePreview(item.imageUrl ? `${API_ORIGIN}${item.imageUrl}` : "");
-    setForm({ name: item.name, categoryId: item.category.id, brandId: item.brand?.id ?? "", description: item.description ?? "", imageUrl: item.imageUrl ?? "", packSize: item.packSize, unit: item.unit, price: String(offer?.price ?? ""), mrp: String(offer?.mrp ?? offer?.price ?? ""), taxRate: String(item.taxRate ?? 0), sellerSku: offer?.sellerSku ?? `AO-${Date.now().toString().slice(-7)}`, servicePinCodes: (offer?.serviceAreas ?? []).map((area) => area.pinCode).join(", "), minimumOrderQuantity: String(offer?.minimumOrderQuantity ?? 1), stockOnHand: String(offer?.stockOnHand ?? 0), status: item.status });
+    setForm({ name: item.name, categoryId: item.category.id, brandId: item.brand?.id ?? "", description: item.description ?? "", imageUrl: item.imageUrl ?? "", packSize: item.packSize, unit: item.unit, price: String(offer?.price ?? ""), mrp: String(offer?.mrp ?? offer?.price ?? ""), taxRate: String(item.taxRate ?? 0), sellerSku: offer?.sellerSku ?? newSellerSku(), servicePinCodes: (offer?.serviceAreas ?? []).map((area) => area.pinCode).join(", "), minimumOrderQuantity: String(offer?.minimumOrderQuantity ?? 1), stockOnHand: String(offer?.stockOnHand ?? 0), status: item.status });
     setShowProductForm(true);
   };
   const selectImage = (event: ChangeEvent<HTMLInputElement>) => {
@@ -311,7 +315,7 @@ export function AdminControlPanel() {
       {!loading && tab === "activity" && <ActivityPanel events={activity} errors={errorRecords}/>}
       {!loading && tab === "catalog" && <CatalogPanel categories={categories} brands={brands} newCategory={newCategory} newBrand={newBrand} setNewCategory={setNewCategory} setNewBrand={setNewBrand} addNamed={addNamed} setActive={setCatalogActive} onSaveBrand={saveBrand} busy={busy}/>}
       {!loading && tab === "home-cards" && <HomeCardsPanel cards={homeCategoryCards} previews={homeCardPreviews} onSelect={selectHomeCardImage} onSave={uploadHomeCardImage} busy={busy}/>}
-      {!loading && tab === "mobile-home" && <MobileHomePanel products={products} settings={settings} busy={busy} onSave={saveMobileHomeTopSelling}/>}
+      {!loading && tab === "mobile-home" && <MobileHomePanel key={settings.find((item) => item.key === "mobile.home.top-selling")?.updatedAt ?? "defaults"} products={products} settings={settings} busy={busy} onSave={saveMobileHomeTopSelling}/>}
       {!loading && ["inventory", "ledger", "delivery", "offers", "marketing", "reports", "notifications", "settings"].includes(tab) && <OperationsPanel tab={tab === "marketing" ? "offers" : tab} inventory={inventory} deliveries={deliveries} ledger={ledger} reports={reports} businessDashboard={businessDashboard} notifications={notifications} settings={settings} promotions={promotions} products={products} backups={backupRecords} busy={busy} canManageInventory={canManageInventory} onOfferSave={saveOffer} onDeliveryStatus={setDeliveryStatus} onPaymentStatus={setPaymentStatus} onCreateNotification={createNotification} onNotificationStatus={setNotificationStatus} onSettingSave={updateSetting} onCreatePromotion={createPromotion} onPromotionStatus={setPromotionStatus} onStockAdjustment={adjustInventory} onCreateBackup={createDatabaseBackup}/>}
       {accountDetail && <AccountDetailDialog detail={accountDetail} onClose={() => setAccountDetail(null)} onReviewDocument={reviewUserDocument} onReviewCertificate={reviewUserCertificate} onDownloadDocument={downloadUserDocument}/>}
       {showProductForm && <ProductEditor form={form} setForm={setForm} categories={categories} brands={brands} editing={editing} imagePreview={imagePreview} busy={busy} onImage={selectImage} onClose={() => setShowProductForm(false)} onSubmit={saveProduct}/>}
@@ -322,18 +326,12 @@ export function AdminControlPanel() {
 
 function MobileHomePanel({ products, settings, busy, onSave }: { products: AdminProduct[]; settings: AdminSetting[]; busy: boolean; onSave: (value: { enabled: boolean; title: string; subtitle: string; productIds: string[] }) => void }) {
   const setting = settings.find((item) => item.key === "mobile.home.top-selling");
-  const [enabled, setEnabled] = useState(true);
-  const [title, setTitle] = useState("ðŸ”¥ Top Selling");
-  const [subtitle, setSubtitle] = useState("Most ordered products this week");
-  const [productIds, setProductIds] = useState<string[]>([]);
+  const value = setting?.value;
+  const [enabled, setEnabled] = useState(typeof value?.enabled === "boolean" ? value.enabled : true);
+  const [title, setTitle] = useState(typeof value?.title === "string" ? value.title : "ðŸ”¥ Top Selling");
+  const [subtitle, setSubtitle] = useState(typeof value?.subtitle === "string" ? value.subtitle : "Most ordered products this week");
+  const [productIds, setProductIds] = useState<string[]>(Array.isArray(value?.productIds) ? value.productIds.filter((id): id is string => typeof id === "string").slice(0, 9) : []);
   const [localError, setLocalError] = useState("");
-  useEffect(() => {
-    const value = setting?.value;
-    setEnabled(typeof value?.enabled === "boolean" ? value.enabled : true);
-    setTitle(typeof value?.title === "string" ? value.title : "ðŸ”¥ Top Selling");
-    setSubtitle(typeof value?.subtitle === "string" ? value.subtitle : "Most ordered products this week");
-    setProductIds(Array.isArray(value?.productIds) ? value.productIds.filter((id): id is string => typeof id === "string").slice(0, 9) : []);
-  }, [setting]);
   const productById = new Map(products.map((product) => [product.id, product]));
   const candidates = products.filter((product) => product.status === "APPROVED" && product.offers.some((offer) => offer.isActive && offer.stockOnHand - offer.reservedQuantity >= offer.minimumOrderQuantity));
   const toggleProduct = (id: string) => {
@@ -440,12 +438,11 @@ function OrganizationsPanel({ organizations, accounts, search, onSearch, onVerif
 }
 
 function OrdersPanel({ orders, search, onSearch, onStatus, onReturnStatus }: { orders: Order[]; search: string; onSearch: (value: string) => void; onStatus: (id: string, status: string) => void; onReturnStatus: (orderNumber: string, returnId: string, status: string) => void }) {
-  const statuses = ["PLACED", "PARTIALLY_ACCEPTED", "ACCEPTED", "PARTIALLY_DISPATCHED", "DISPATCHED", "DELIVERED", "PARTIALLY_CANCELLED", "CANCELLED", "REJECTED"];
   return <section className="admin-panel"><div className="admin-toolbar"><label>âŒ• <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search order number or retailerâ€¦"/></label><span>{orders.length} orders</span></div><div className="admin-table-scroll"><table><thead><tr><th>Order</th><th>Retailer</th><th>Fulfillment</th><th>Delivery</th><th>Total / COD</th><th>Status</th><th>Returns</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id}><td><b>{order.orderNumber}</b><small className="admin-table-sub">{new Date(order.createdAt).toLocaleDateString()}</small></td><td>{order.retailer.name}</td><td>{order.fulfillments.flatMap((item) => item.lines).reduce((count, line) => count + line.quantity, 0)} items Â· {order.fulfillments.length} supplier(s)</td><td>{order.deliveryName}<small className="admin-table-sub">{order.deliveryDistrict}</small></td><td><b>{formatRupees(Number(order.total))}</b><small className="admin-table-sub">{order.paymentMethod ?? "Payment unspecified"} Â· {order.payments?.[0]?.status ?? "â€”"}</small></td><td><select className="admin-status-select" value={order.status} disabled={order.status !== "PLACED" && order.status !== "PARTIALLY_ACCEPTED"} onChange={(event) => onStatus(order.id, event.target.value)}>{[order.status, ...(order.status === "PLACED" || order.status === "PARTIALLY_ACCEPTED" ? ["ACCEPTED", "CANCELLED", "REJECTED"] : [])].map((status) => <option key={status}>{status}</option>)}</select></td><td>{order.returnRequests?.map((request) => <div key={request.id} style={{ minWidth: 170, marginBottom: 7 }}><b>{request.status}</b><small className="admin-table-sub">{request.reason}</small>{["REQUESTED", "APPROVED"].includes(request.status) && <div className="admin-actions">{request.status === "REQUESTED" && <><button className="admin-approve" onClick={() => onReturnStatus(order.orderNumber, request.id, "APPROVED")}>Approve</button><button className="admin-danger" onClick={() => onReturnStatus(order.orderNumber, request.id, "REJECTED")}>Reject</button></>}{request.status === "APPROVED" && <button className="admin-approve" onClick={() => onReturnStatus(order.orderNumber, request.id, "COMPLETED")}>Complete return</button>}</div>}</div>) ?? "â€”"}</td></tr>)}</tbody></table>{!orders.length && <Empty>No orders match this search.</Empty>}</div></section>;
 }
 
 function AllAccountsPanel({ accounts, search, onSearch, onAccountStatus, onAdminPermissions, canAssignPermissions, onOpenAccount }: { accounts: Account[]; search: string; onSearch: (value: string) => void; onAccountStatus: (id: string, status: "ACTIVE" | "DISABLED") => void; onAdminPermissions: (id: string, permissions: string[]) => void; canAssignPermissions: boolean; onOpenAccount: (id: string) => void }) {
-  return <section className="admin-panel"><PanelTitle title="All platform accounts" caption="Search and control every user sign-in across retailer, supplier and operations roles"/><div className="admin-toolbar"><label>âŒ• <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search name, email, role, businessâ€¦"/></label><span>{accounts.length} accounts loaded</span></div><div className="admin-table-scroll"><table><thead><tr><th>User</th><th>Role</th><th>Business</th><th>Joined</th><th>Account</th><th>Access</th></tr></thead><tbody>{accounts.map((account) => <tr key={account.id}><td><b>{account.name}</b><small className="admin-table-sub">{account.email}{account.phone ? ` Â· ${account.phone}` : ""}</small></td><td>{account.role}</td><td>{account.organization?.name ?? "â€”"}</td><td>{new Date(account.createdAt).toLocaleDateString()}</td><td><Status value={account.status}/></td><td><button className="admin-secondary" onClick={() => onOpenAccount(account.id)}>View account</button> <button className={account.status === "ACTIVE" ? "admin-danger" : "admin-approve"} onClick={() => onAccountStatus(account.id, account.status === "ACTIVE" ? "DISABLED" : "ACTIVE")}>{account.status === "ACTIVE" ? "Disable" : "Enable"}</button>{account.role === "ADMIN" && <button className="admin-secondary" onClick={() => { const input = window.prompt("Enter admin permissions separated by commas (CATALOG, RETAILERS, ORDERS, INVENTORY, FINANCE, DELIVERY, REPORTS, NOTIFICATIONS, SETTINGS, USERS, PURCHASING, STAFF, ACTIVITY)", (account.adminPermissions ?? []).join(",")); if (input !== null) onAdminPermissions(account.id, input.split(",").map((permission) => permission.trim().toUpperCase()).filter(Boolean)); }}>Permissions</button>}</td></tr>)}</tbody></table>{!accounts.length && <Empty>No user accounts match this search.</Empty>}</div></section>;
+  return <section className="admin-panel"><PanelTitle title="All platform accounts" caption="Search and control every user sign-in across retailer, supplier and operations roles"/><div className="admin-toolbar"><label>âŒ• <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search name, email, role, businessâ€¦"/></label><span>{accounts.length} accounts loaded</span></div><div className="admin-table-scroll"><table><thead><tr><th>User</th><th>Role</th><th>Business</th><th>Joined</th><th>Account</th><th>Access</th></tr></thead><tbody>{accounts.map((account) => <tr key={account.id}><td><b>{account.name}</b><small className="admin-table-sub">{account.email}{account.phone ? ` Â· ${account.phone}` : ""}</small></td><td>{account.role}</td><td>{account.organization?.name ?? "â€”"}</td><td>{new Date(account.createdAt).toLocaleDateString()}</td><td><Status value={account.status}/></td><td><button className="admin-secondary" onClick={() => onOpenAccount(account.id)}>View account</button> <button className={account.status === "ACTIVE" ? "admin-danger" : "admin-approve"} onClick={() => onAccountStatus(account.id, account.status === "ACTIVE" ? "DISABLED" : "ACTIVE")}>{account.status === "ACTIVE" ? "Disable" : "Enable"}</button>{account.role === "ADMIN" && canAssignPermissions && <button className="admin-secondary" onClick={() => { const input = window.prompt("Enter admin permissions separated by commas (CATALOG, RETAILERS, ORDERS, INVENTORY, FINANCE, DELIVERY, REPORTS, NOTIFICATIONS, SETTINGS, USERS, PURCHASING, STAFF, ACTIVITY)", (account.adminPermissions ?? []).join(",")); if (input !== null) onAdminPermissions(account.id, input.split(",").map((permission) => permission.trim().toUpperCase()).filter(Boolean)); }}>Permissions</button>}</td></tr>)}</tbody></table>{!accounts.length && <Empty>No user accounts match this search.</Empty>}</div></section>;
 }
 
 function ReportsPanel({ reports, businessDashboard }: { reports: AdminReports; businessDashboard: BusinessDashboard | null }) {

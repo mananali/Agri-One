@@ -293,6 +293,11 @@ export function CartPage() {
   return <AgriSite><main className="agri-container agri-cart-page"><div className="agri-breadcrumb"><Link href="/">Home</Link> › Cart</div><h1>Your Cart <small>({items.length} items)</small></h1><div className="agri-cart-layout"><section className="agri-cart-lines">{items.map(({ line, product }) => <article className="agri-cart-line" key={line.id}><Link href={`/products/${product.slug}`}><ProductArt product={product} compact/></Link><div className="agri-cart-product"><Link href={`/products/${product.slug}`}><strong>{product.name}</strong></Link><small>{product.brand} · {product.pack}</small><span>In Stock</span></div><div className="agri-quantity"><button onClick={() => updateQuantity(line.id, line.quantity - 1)}>−</button><b>{line.quantity}</b><button onClick={() => updateQuantity(line.id, line.quantity + 1)}>+</button></div><strong className="agri-cart-price">{formatRupees(product.price * line.quantity)}</strong><button className="agri-remove" onClick={() => updateQuantity(line.id, 0)} aria-label={`Remove ${product.name}`}>×</button></article>)}{items.length === 0 && <div className="agri-empty"><h2>Your cart is empty</h2><p>Explore our catalogue and find something for your farm.</p><Link className="agri-primary-button" href="/products">Continue Shopping →</Link></div>}<Link href="/products" className="agri-continue-link">← Continue Shopping</Link></section><aside className="agri-order-summary"><h2>Order Summary</h2><div><span>Subtotal</span><b>{formatRupees(subtotal)}</b></div><div><span>Shipping</span><b>{subtotal ? "₹50" : "₹0"}</b></div><div><span>Tax</span><b>Calculated at checkout</b></div><hr/><div className="agri-summary-total"><strong>Total</strong><strong>{formatRupees(subtotal + (subtotal ? 50 : 0))}</strong></div><Link className="agri-primary-button" href={items.length ? "/checkout" : "/products"}>{items.length ? "Proceed to Checkout →" : "Shop Products →"}</Link><small>🔒 Secure checkout · Easy returns</small></aside></div></main></AgriSite>;
 }
 
+function createCheckoutIdempotencyKey() {
+  if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function CheckoutPage() {
   const cart = useCart();
   const [placed, setPlaced] = useState("");
@@ -318,7 +323,7 @@ export function CheckoutPage() {
     if (items.some(({ product }) => !product.offerId)) { setError("Some cart items are no longer linked to an active catalogue offer. Remove them and add the live products again."); return; }
     const payload = { items: items.map(({ line, product }) => ({ offerId: product.offerId!, quantity: line.quantity })), deliveryName, deliveryPhone, deliveryAddress, deliveryArea, deliveryDistrict, deliveryPinCode };
     const signature = JSON.stringify(payload);
-    const attempt = orderAttempt.current?.signature === signature ? orderAttempt.current : { signature, key: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}` };
+    const attempt = orderAttempt.current?.signature === signature ? orderAttempt.current : { signature, key: createCheckoutIdempotencyKey() };
     orderAttempt.current = attempt;
     setBusy(true);
     try {

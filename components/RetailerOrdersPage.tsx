@@ -43,9 +43,12 @@ export function RetailerOrdersPage() {
 
   useEffect(() => {
     const accessToken = window.sessionStorage.getItem("agri-one-access-token") ?? "";
-    queueMicrotask(() => setToken(accessToken));
-    if (!accessToken) { setLoading(false); return; }
-    void refresh(accessToken);
+    queueMicrotask(() => {
+      setToken(accessToken);
+      if (!accessToken) setLoading(false);
+    });
+    if (!accessToken) return;
+    queueMicrotask(() => { void refresh(accessToken); });
     const poll = () => { if (document.visibilityState === "visible") void refresh(accessToken); };
     const timer = window.setInterval(poll, 30_000);
     window.addEventListener("focus", poll);
