@@ -266,3 +266,7 @@
 @media(max-width:520px){.agri-home-content .agri-home-products{padding:14px 10px 12px}.agri-product-grid .agri-product-card-image .agri-product-art{height:230px}}
 .agri-site{background-color:#f3f7f2;background-image:linear-gradient(180deg,#f6faf5 0%,#f1f6f0 48%,#f8f7f2 100%)}
 .brand-mark-icon,.agri-logo-mark,.agri-dash-brand-mark,.admin-brand-mark,.admin-auth-mark{object-fit:contain}
+.agri-header .agri-logo{height:50px}
+.agri-header .agri-logo-mark{width:60px;height:48px}
+@media(max-width:760px){.agri-header .agri-logo{height:46px}.agri-header .agri-logo-mark{width:44px;height:42px}}
+@media(max-width:420px){.agri-header .agri-logo{height:42px}.agri-header .agri-logo-mark{width:38px;height:38px}}
