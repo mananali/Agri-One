@@ -17,6 +17,69 @@ export class CatalogService {
     return Object.fromEntries(cards.map(({ slug, imageUrl }) => [slug, imageUrl]));
   }
 
+  listPromotions() {
+    const now = new Date();
+    return this.prisma.promotion.findMany({ where: { isActive: true, startsAt: { lte: now }, endsAt: { gte: now } }, orderBy: { startsAt: 'asc' }, select: { id: true, title: true, body: true, type: true, discountPercent: true, minimumOrderQuantity: true, coinsPer100: true, startsAt: true, endsAt: true } });
+  }
+
+  async mobileHomeTopSelling() {
+    const setting = await this.prisma.platformSetting.findUnique({ where: { key: 'mobile.home.top-selling' }, select: { value: true } });
+    const value = setting?.value && typeof setting.value === 'object' && !Array.isArray(setting.value) ? setting.value as Record<string, unknown> : {};
+    const enabled = typeof value.enabled === 'boolean' ? value.enabled : true;
+    const title = typeof value.title === 'string' && value.title.trim() ? value.title.trim() : '🔥 Top Selling';
+    let subtitle = typeof value.subtitle === 'string' && value.subtitle.trim() ? value.subtitle.trim() : 'Most ordered products this week';
+    const selectedIds = Array.isArray(value.productIds) ? value.productIds.filter((id): id is string => typeof id === 'string').slice(0, 9) : [];
+    if (!enabled) return { enabled, title, subtitle, products: [] };
+
+    let productIds = selectedIds;
+    if (!productIds.length) {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const sales = await this.prisma.orderLine.groupBy({
+        by: ['offerId'],
+        where: { fulfillmentOrder: { status: { notIn: ['CANCELLED', 'REJECTED'] }, customerOrder: { createdAt: { gte: weekAgo }, status: { notIn: ['CANCELLED', 'REJECTED'] } } } },
+        _sum: { quantity: true },
+      });
+      const offerSales = sales.sort((a, b) => (b._sum.quantity ?? 0) - (a._sum.quantity ?? 0)).slice(0, 45);
+      const productSales = new Map<string, number>();
+      if (offerSales.length) {
+        const offers = await this.prisma.productOffer.findMany({ where: { id: { in: offerSales.map((item) => item.offerId) } }, select: { id: true, productId: true } });
+        const productByOffer = new Map(offers.map((offer) => [offer.id, offer.productId]));
+        for (const sale of offerSales) {
+          const id = productByOffer.get(sale.offerId);
+          if (id) productSales.set(id, (productSales.get(id) ?? 0) + (sale._sum.quantity ?? 0));
+        }
+      }
+      productIds = [...productSales.entries()].sort((a, b) => b[1] - a[1]).slice(0, 9).map(([id]) => id);
+      if (!productIds.length) {
+        const recentProducts = await this.prisma.product.findMany({
+          where: { status: ProductStatus.APPROVED, category: { isActive: true }, offers: { some: { isActive: true, seller: { verificationStatus: VerificationStatus.APPROVED } } } },
+          orderBy: { createdAt: 'desc' }, take: 9, select: { id: true },
+        });
+        productIds = recentProducts.map((product) => product.id);
+        if (productIds.length) subtitle = 'Popular products from Agri-One';
+      }
+    }
+    if (!productIds.length) return { enabled, title, subtitle, products: [] };
+
+    const records = await this.prisma.product.findMany({
+      where: { id: { in: productIds }, status: ProductStatus.APPROVED, category: { isActive: true }, offers: { some: { isActive: true, seller: { verificationStatus: VerificationStatus.APPROVED } } } },
+      include: {
+        category: { select: { name: true, slug: true } },
+        brand: { select: { name: true, slug: true } },
+        offers: { where: { isActive: true, seller: { verificationStatus: VerificationStatus.APPROVED } }, include: { seller: { select: { id: true, name: true } } }, orderBy: { price: 'asc' } },
+      },
+    });
+    const byId = new Map(records.map((record) => [record.id, record]));
+    const products = productIds.flatMap((id) => {
+      const record = byId.get(id);
+      if (!record) return [];
+      const offers = record.offers.map((offer) => ({ ...offer, availableStock: Math.max(0, offer.stockOnHand - offer.reservedQuantity) })).filter((offer) => offer.availableStock >= offer.minimumOrderQuantity);
+      if (!offers.length) return [];
+      return [{ ...record, offers }];
+    });
+    return { enabled, title, subtitle, products };
+  }
+
   listBrands() {
     return this.prisma.brand.findMany({ where: { isActive: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, slug: true, description: true, imageUrl: true } });
   }
@@ -30,7 +93,7 @@ export class CatalogService {
     };
     const where = {
       status: ProductStatus.APPROVED,
-      ...(query.category ? { category: { slug: query.category } } : {}),
+      category: { isActive: true, ...(query.category ? { slug: query.category } : {}) },
       ...(query.brand ? { brand: { slug: query.brand } } : {}),
       ...(query.search ? { OR: [
         { name: { contains: query.search, mode: 'insensitive' as const } },
@@ -65,7 +128,7 @@ export class CatalogService {
 
   async productBySlug(slug: string, pinCode?: string) {
     const product = await this.prisma.product.findFirst({
-      where: { slug, status: ProductStatus.APPROVED },
+      where: { slug, status: ProductStatus.APPROVED, category: { isActive: true } },
       include: {
         category: true,
         brand: true,

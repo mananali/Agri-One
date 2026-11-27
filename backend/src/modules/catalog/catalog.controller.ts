@@ -11,6 +11,8 @@ export class CatalogController {
   constructor(private readonly catalog: CatalogService) {}
   @Get('categories') @Public() categories() { return this.catalog.listCategories(); }
   @Get('home-category-cards') @Public() homeCategoryCards() { return this.catalog.homeCategoryCards(); }
+  @Get('promotions') @Public() promotions() { return this.catalog.listPromotions(); }
+  @Get('mobile-home/top-selling') @Public() mobileHomeTopSelling() { return this.catalog.mobileHomeTopSelling(); }
   @Get('brands') @Public() brands() { return this.catalog.listBrands(); }
   @Get('products') @Public() @ApiOperation({ summary: 'Search approved products and approved seller offers' })
   products(@Query() query: CatalogQueryDto) { return this.catalog.listProducts(query); }

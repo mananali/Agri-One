@@ -1,0 +1,13 @@
+CREATE TYPE "PromotionType" AS ENUM ('FESTIVAL', 'BULK', 'REWARDS');
+
+ALTER TABLE "Promotion"
+  ADD COLUMN "type" "PromotionType" NOT NULL DEFAULT 'FESTIVAL',
+  ADD COLUMN "discountPercent" DECIMAL(5,2),
+  ADD COLUMN "minimumOrderQuantity" INTEGER,
+  ADD COLUMN "coinsPer100" INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE "CustomerOrder"
+  ADD COLUMN "discountTotal" DECIMAL(12,2) NOT NULL DEFAULT 0;
+
+ALTER TABLE "OrderLine"
+  ADD COLUMN "discountAmount" DECIMAL(12,2) NOT NULL DEFAULT 0;

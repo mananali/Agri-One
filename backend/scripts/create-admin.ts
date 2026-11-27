@@ -14,7 +14,7 @@ async function main() {
   if (await prisma.user.findUnique({ where: { email } })) throw new Error('That email already belongs to a user. No account was changed.');
   const organization = await prisma.organization.findFirst({ where: { type: OrganizationType.AGRI_ONE }, orderBy: { createdAt: 'asc' } });
   const adminOrganization = organization ?? await prisma.organization.create({ data: { name: 'Agri-One', type: OrganizationType.AGRI_ONE, verificationStatus: VerificationStatus.APPROVED } });
-  await prisma.user.create({ data: { email, name, passwordHash: await hash(password, 12), role: UserRole.ADMIN, organizationId: adminOrganization.id } });
+  await prisma.user.create({ data: { email, name, passwordHash: await hash(password, 12), role: UserRole.ADMIN, isSuperAdmin: true, organizationId: adminOrganization.id } });
   console.info(`Created admin account ${email}.`);
   if (process.env.ADMIN_PASSWORD) console.info('Remove ADMIN_PASSWORD from the environment after setup.');
 }

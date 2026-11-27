@@ -1,0 +1,2 @@
+ALTER TABLE "CustomerOrder"
+  ADD COLUMN "rewardPoints" INTEGER NOT NULL DEFAULT 0;

@@ -1,5 +1,6 @@
 export type MarketplaceProduct = {
   id: string;
+  offerId?: string;
   slug: string;
   name: string;
   brand: string;

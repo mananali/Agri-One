@@ -21,9 +21,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   useEffect(() => {
     if (mode !== "login") return;
-    const savedEmail = window.localStorage.getItem("agri-one-login-id") ?? "";
-    setRememberedEmail(savedEmail);
-    setRememberMe(Boolean(savedEmail));
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const savedEmail = window.localStorage.getItem("agri-one-login-id") ?? "";
+      setRememberedEmail(savedEmail);
+      setRememberMe(Boolean(savedEmail));
+    });
+    return () => { active = false; };
   }, [mode]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -57,7 +62,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
       const auth = result as AuthResponse;
       window.sessionStorage.setItem("agri-one-access-token", auth.accessToken);
-      router.push(auth.user.role === "ADMIN" ? "/admin" : auth.user.role === "SUPPLIER" ? "/supplier" : "/retailer");
+      const requestedNext = mode === "login" ? new URLSearchParams(window.location.search).get("next") : null;
+      const safeNext = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : null;
+      router.push(auth.user.role === "RETAILER" && safeNext ? safeNext : auth.user.role === "ADMIN" ? "/admin" : auth.user.role === "SUPPLIER" ? "/supplier" : "/retailer");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not connect to Agri-One API.");
     } finally {

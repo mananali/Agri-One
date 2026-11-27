@@ -3,6 +3,7 @@ import { marketplaceProducts, type MarketplaceProduct } from "./agri-data";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
 
 type CatalogOffer = {
+  id: string;
   price: number | string;
   mrp?: number | string | null;
   availableStock?: number;
@@ -44,6 +45,7 @@ function toProduct(record: CatalogRecord): MarketplaceProduct {
 
   return {
     id: marketplaceProducts.find((product) => product.slug === record.slug)?.id ?? record.id,
+    offerId: offer?.id,
     slug: record.slug,
     name: record.name,
     brand: record.brand?.name ?? offer?.seller?.name ?? "Agri-One",
@@ -63,6 +65,24 @@ function toProduct(record: CatalogRecord): MarketplaceProduct {
 }
 
 export type CatalogBrand = { id: string; name: string; slug: string; description?: string | null; imageUrl?: string | null };
+export type CatalogCategory = { id: string; name: string; slug: string; description?: string | null };
+export type CatalogPromotion = { id: string; title: string; body: string; startsAt: string; endsAt: string };
+
+export async function fetchCatalogCategories(signal: AbortSignal): Promise<CatalogCategory[]> {
+  const response = await fetch(`${API_BASE}/catalog/categories`, { signal, cache: "no-store" });
+  if (!response.ok) throw new Error(`Category request failed (${response.status})`);
+  const categories = (await response.json()) as CatalogCategory[];
+  if (!Array.isArray(categories)) throw new Error("Category response is invalid");
+  return categories;
+}
+
+export async function fetchCatalogPromotions(signal: AbortSignal): Promise<CatalogPromotion[]> {
+  const response = await fetch(`${API_BASE}/catalog/promotions`, { signal, cache: "no-store" });
+  if (!response.ok) throw new Error(`Promotion request failed (${response.status})`);
+  const promotions = (await response.json()) as CatalogPromotion[];
+  if (!Array.isArray(promotions)) throw new Error("Promotion response is invalid");
+  return promotions;
+}
 
 export async function fetchCatalogBrands(signal: AbortSignal): Promise<CatalogBrand[]> {
   const response = await fetch(`${API_BASE}/catalog/brands`, { signal, cache: "no-store" });

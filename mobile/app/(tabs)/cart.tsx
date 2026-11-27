@@ -1,0 +1,27 @@
+import { AgriText as Text } from "../../components/AgriText";
+import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { Button, EmptyState, Panel } from "../../components/Controls";
+import { productFallbackImage } from "../../components/ProductCard";
+import { imageSource, money } from "../../src/api";
+import { useAppStore } from "../../src/store";
+import { colors } from "../../src/theme";
+
+export default function CartScreen() {
+  const { cart, updateQuantity, removeFromCart, token } = useAppStore();
+  const subtotal = cart.reduce((sum, line) => sum + line.price * line.quantity, 0);
+  const checkout = () => router.push(token ? "/checkout" : { pathname: "/login", params: { next: "checkout" } });
+  return <SafeAreaView style={styles.safe} edges={["top"]}><View style={styles.heading}><Text style={styles.title}>Your cart</Text><Text style={styles.count}>{cart.reduce((sum, item) => sum + item.quantity, 0)} items</Text></View>
+    {cart.length === 0 ? <ScrollView contentContainerStyle={styles.emptyWrap}><EmptyState title="Your cart is empty" detail="Browse agriculture products and add what your store needs." action={<Button title="Explore products" onPress={() => router.replace("/(tabs)")}/>} /></ScrollView> : <>
+      <ScrollView contentContainerStyle={styles.list}>{cart.map(line => <Panel key={line.offerId} style={styles.line}>
+        <Image source={imageSource(line.imageUrl) ?? productFallbackImage(line.categorySlug)} style={styles.image} resizeMode="contain"/>
+        <View style={styles.info}><Text numberOfLines={2} style={styles.name}>{line.name}</Text><Text style={styles.meta}>{line.brand} · {line.pack}</Text><Text style={styles.price}>{money(line.price)} <Text style={styles.each}>each</Text></Text>
+          <View style={styles.controls}><View style={styles.stepper}><Pressable accessibilityRole="button" accessibilityLabel={line.quantity <= line.minimumOrderQuantity ? `Remove ${line.name}` : `Decrease quantity of ${line.name}`} onPress={() => line.quantity <= line.minimumOrderQuantity ? removeFromCart(line.offerId) : updateQuantity(line.offerId, line.quantity - 1)} style={styles.step}><Text style={styles.stepText}>−</Text></Pressable><Text accessibilityLabel={`Quantity ${line.quantity}`} style={styles.quantity}>{line.quantity}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Increase quantity of ${line.name}`} disabled={line.quantity >= line.stock} onPress={() => updateQuantity(line.offerId, line.quantity + 1)} style={[styles.step, line.quantity >= line.stock && styles.stepDisabled]}><Text style={[styles.stepText, line.quantity >= line.stock && styles.stepTextDisabled]}>＋</Text></Pressable></View><Pressable accessibilityRole="button" accessibilityLabel={`Remove ${line.name} from cart`} onPress={() => removeFromCart(line.offerId)}><Text style={styles.remove}>Remove</Text></Pressable></View>
+        </View>
+      </Panel>)}</ScrollView>
+      <View style={styles.summary}><View style={styles.summaryRow}><Text style={styles.subtotalLabel}>Subtotal</Text><Text style={styles.subtotal}>{money(subtotal)}</Text></View><Text style={styles.note}>Delivery, taxes and final availability are confirmed at checkout.</Text><Button title="Continue to checkout  →" onPress={checkout}/></View>
+    </>}</SafeAreaView>;
+}
+
+const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: colors.canvas }, heading: { paddingHorizontal: 18, paddingTop: 9, paddingBottom: 15, flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }, title: { color: colors.dark, fontSize: 25, fontWeight: "900" }, count: { color: colors.muted, fontSize: 11, fontWeight: "600" }, list: { paddingHorizontal: 15, paddingBottom: 22, gap: 11 }, line: { flexDirection: "row", gap: 13, padding: 11 }, image: { width: 84, height: 112, borderRadius: 10, backgroundColor: "#F2F7F0" }, info: { flex: 1, justifyContent: "center" }, name: { color: colors.dark, fontSize: 13, lineHeight: 18, fontWeight: "800" }, meta: { marginTop: 4, color: colors.muted, fontSize: 10 }, price: { marginTop: 10, color: colors.dark, fontSize: 15, fontWeight: "800" }, each: { color: colors.muted, fontSize: 10, fontWeight: "500" }, controls: { marginTop: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, stepper: { height: 31, borderWidth: 1, borderColor: colors.line, borderRadius: 9, flexDirection: "row", alignItems: "center", backgroundColor: colors.white }, step: { width: 32, height: 30, alignItems: "center", justifyContent: "center" }, stepDisabled: { opacity: .4 }, stepText: { color: colors.green, fontWeight: "800", fontSize: 16 }, stepTextDisabled: { color: colors.muted }, quantity: { minWidth: 25, textAlign: "center", color: colors.dark, fontSize: 11, fontWeight: "800" }, remove: { color: colors.red, fontSize: 10, fontWeight: "700" }, summary: { padding: 16, paddingBottom: 12, borderTopWidth: 1, borderColor: colors.line, backgroundColor: colors.white, gap: 9 }, summaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, subtotalLabel: { color: colors.muted, fontSize: 12, fontWeight: "600" }, subtotal: { color: colors.dark, fontSize: 19, fontWeight: "900" }, note: { marginBottom: 4, color: colors.muted, fontSize: 10, lineHeight: 15 }, emptyWrap: { flexGrow: 1, justifyContent: "center" } });

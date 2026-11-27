@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsPhoneNumber, IsString, Length, MaxLength, Min, ValidateNested } from 'class-validator';
 
 export class CheckoutLineDto {
-  @IsString() @MaxLength(40) offerId!: string;
+  @IsString() @MaxLength(100) offerId!: string;
   @Type(() => Number) @IsInt() @Min(1) quantity!: number;
 }
 
@@ -23,4 +23,8 @@ export class CheckoutDto {
 export class FulfillmentDecisionDto {
   @IsIn(['ACCEPT', 'REJECT']) decision!: 'ACCEPT' | 'REJECT';
   @IsString() @Length(1, 500) reason!: string;
+}
+
+export class CreateReturnRequestDto {
+  @IsString() @Length(5, 1000) reason!: string;
 }
