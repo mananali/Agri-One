@@ -265,3 +265,4 @@
 @media(max-width:760px){.agri-home-content .agri-home-products{padding:16px 12px 14px;border-radius:18px}.agri-product-grid .agri-product-card{border-radius:16px}.agri-product-grid .agri-product-card-image .agri-product-art{height:190px}.agri-product-grid .agri-product-info{padding:11px 12px 13px}}
 @media(max-width:520px){.agri-home-content .agri-home-products{padding:14px 10px 12px}.agri-product-grid .agri-product-card-image .agri-product-art{height:230px}}
 .agri-site{background-color:#f3f7f2;background-image:linear-gradient(180deg,#f6faf5 0%,#f1f6f0 48%,#f8f7f2 100%)}
+.brand-mark-icon,.agri-logo-mark,.agri-dash-brand-mark,.admin-brand-mark,.admin-auth-mark{object-fit:contain}
