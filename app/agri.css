@@ -278,3 +278,13 @@
 @media(max-width:900px){.agri-site .agri-listing-layout{grid-template-columns:1fr;gap:12px}.agri-site .agri-listing-page .agri-product-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}}
 @media(max-width:760px){.agri-site .agri-listing-page{width:calc(100% - 20px)}.agri-site .agri-listing-page .agri-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
 @media(max-width:520px){.agri-site .agri-listing-page .agri-product-grid{grid-template-columns:1fr;gap:12px}}
+.agri-product-grid .agri-product-card{min-height:0}
+.agri-product-grid .agri-product-card-image{padding:8px 8px 0}
+.agri-product-grid .agri-product-card-image .agri-product-art{height:190px}
+.agri-product-grid .agri-product-info{padding:10px 12px 12px}
+.agri-product-grid .agri-product-info h3{min-height:36px;margin:6px 0 3px}
+.agri-product-grid .agri-product-short-description{min-height:30px;margin:2px 0 5px}
+.agri-product-grid .agri-rating{margin:4px 0 7px}
+.agri-product-grid .agri-add-button{min-height:38px}
+@media(max-width:760px){.agri-product-grid .agri-product-card-image .agri-product-art{height:180px}}
+@media(max-width:520px){.agri-product-grid .agri-product-card-image .agri-product-art{height:190px}}
